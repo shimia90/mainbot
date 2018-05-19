@@ -139,13 +139,24 @@ function checkStatusWallet() {
 
 // Thêm telegram_id nếu user mới đăng nhập lần đầu
 function insertTelegramId($userName, $telegramId) {
-  $result     =   false;
-  $db         =   new Database(DB_SERVER,DB_USER,DB_PASS,DB_DATABASE);
+  $result         =   false;
+  $db             =   new Database(DB_SERVER,DB_USER,DB_PASS,DB_DATABASE);
+  $arrayQuery     =   $db->findByCol('users','telegram_id', $telegramId);
+  
+  if(!empty($arrayQuery)) {
+    $db->update('users',['telegram_id'=> 0]," id = '".$arrayQuery['id']."'");
+  }
   $arrayData  =   $db->query("SELECT * FROM :table WHERE `username` = ':username'",['table'=>'users','username'=> $userName ])->fetch();
 
   if(empty($arrayData['telegram_id'])) {
     $result = $db->update('users',['telegram_id'=> $telegramId]," username = '$userName'");
   }
+  
+  /*$arrayData  =   $db->query("SELECT * FROM :table WHERE `username` = ':username'",['table'=>'users','username'=> $userName ])->fetch();
+
+  if(empty($arrayData['telegram_id'])) {
+    $result = $db->update('users',['telegram_id'=> $telegramId]," username = '$userName'");
+  }*/
   return $result;
    $db->close();
 }
@@ -254,7 +265,7 @@ function checkUserExisting($userName) {
   $result   =   false;
   $db               =       new Database(DB_SERVER,DB_USER,DB_PASS,DB_DATABASE);
   //$arrayData        =       $db->findByCol('users','username',$userName);
-  $arrayData 		=	$db->query("SELECT * FROM :table WHERE `username` LIKE ':username'",['table'=>'users','username'=> $userName ])->fetch();
+  $arrayData    = $db->query("SELECT * FROM :table WHERE `username` LIKE ':username'",['table'=>'users','username'=> $userName ])->fetch();
   if(!empty($arrayData)) {
     $result   =   true;
   }
@@ -287,12 +298,12 @@ function checkTelegramExisting($telegramId) {
 }
 
 function insertNewUser($registerUser, $registerPassword, $registerFullname, $registerFacebook = null,$telegramId, $registerEmail = null) {
-	$result   =   false;
-  	$db               =       new Database(DB_SERVER,DB_USER,DB_PASS,DB_DATABASE);
-  	$result = $db->insert('users',['username'=>$registerUser,'password'=>$registerPassword, 'ho_ten'=>$registerFullname, 'facebook'=>$registerFacebook, 'telegram_id'=>$telegramId, 'email'=>$registerEmail, 'roles'=>'member']);
+  $result   =   false;
+    $db               =       new Database(DB_SERVER,DB_USER,DB_PASS,DB_DATABASE);
+    $result = $db->insert('users',['username'=>$registerUser,'password'=>$registerPassword, 'ho_ten'=>$registerFullname, 'facebook'=>$registerFacebook, 'telegram_id'=>$telegramId, 'email'=>$registerEmail, 'roles'=>'member']);
 
-  	return $result;
-  	$db->close();
+    return $result;
+    $db->close();
 }
 
 function sendRegisterMail($registerUser = null, $registerPassword = null, $registerFullname = null, $registerFacebook = null, $registerEmail) {
