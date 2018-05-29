@@ -143,14 +143,14 @@ function insertTelegramId($userName, $telegramId) {
   $db             =   new Database(DB_SERVER,DB_USER,DB_PASS,DB_DATABASE);
   $arrayQuery     =   $db->findByCol('users','telegram_id', $telegramId);
   
-  if(!empty($arrayQuery)) {
+  if(!empty($arrayQuery['id'])) {
     $db->update('users',['telegram_id'=> 0]," id = '".$arrayQuery['id']."'");
   }
-  $arrayData  =   $db->query("SELECT * FROM :table WHERE `username` = ':username'",['table'=>'users','username'=> $userName ])->fetch();
+  $arrayData  =   $db->query("SELECT * FROM :table WHERE `username` LIKE ':username'",['table'=>'users','username'=> $userName ])->fetch();
 
-  if(empty($arrayData['telegram_id'])) {
+  //if(empty($arrayData['telegram_id'])) {
     $result = $db->update('users',['telegram_id'=> $telegramId]," username = '$userName'");
-  }
+  //}
   
   /*$arrayData  =   $db->query("SELECT * FROM :table WHERE `username` = ':username'",['table'=>'users','username'=> $userName ])->fetch();
 

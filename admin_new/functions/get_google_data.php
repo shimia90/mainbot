@@ -89,11 +89,28 @@ function getGoogleDocUser() {
 
     $resultArray 	=	array();
     foreach ($arrayData as $key => $value) {
-    	$resultArray[$key]['username'] 		=		$value['0'];
-    	$resultArray[$key]['password'] 		=		$value['1'];
-    	$resultArray[$key]['ho_ten'] 		=		$value['2'];
-    	$resultArray[$key]['facebook'] 		=		$value['3'];
-    	for($i = 0; $i < count($value); $i++) {
+    	$resultArray[$key]['username'] 		    =		$value['0'];
+    	$resultArray[$key]['password'] 		    =		$value['1'];
+    	$resultArray[$key]['ho_ten'] 		    =		$value['2'];
+    	//$resultArray[$key]['facebook'] 		    =		$value['3'];
+        if(isset($value['3']) && !empty($value['3'])) {
+            $resultArray[$key]['facebook']       =       $value['3'];
+        } else {
+            $resultArray[$key]['facebook']       =       '';
+        }
+
+        if(isset($value['4']) && !empty($value['4'])) {
+            $resultArray[$key]['telegram_id']       =       $value['4'];
+        } else {
+            $resultArray[$key]['telegram_id']       =       0;
+        }
+        
+        if(isset($value['5']) && !empty($value['5'])) {
+            $resultArray[$key]['email']       =       $value['5'];
+        } else {
+            $resultArray[$key]['email']       =       '';
+        }
+    	/*for($i = 0; $i < count($value); $i++) {
     		if($i < 4 || empty($value[$i])) {
     			$resultArray[$key]['telegram_id'] 		=		0;
     			continue;
@@ -102,8 +119,11 @@ function getGoogleDocUser() {
     				break;
     			
     		}
-    	}
+    	}*/
     }
+    /*echo '<pre>';
+    print_r($resultArray);
+    echo '</pre>';*/
 
     return $resultArray;
 }
@@ -114,13 +134,13 @@ function getGoogleDocPlans() {
 
     $service_account_file = 'client_services.json';
 
-    global $sheetBangTinh;
+    global $sheetDuAn;
 
     //$spreadsheet_id = '1m_zf3zUJa4iHemxzDSHPJ9KHhN0868ShNoeqc7tQ-kQ';
-    $spreadsheet_id = $sheetBangTinh; // Sheet Bảng Tính
+    $spreadsheet_id = $sheetDuAn; // Sheet Bảng Tính
 
     //$spreadsheet_range = 'Buzz kì 6';
-    $spreadsheet_range = "user";
+    //$spreadsheet_range = "user";
 
     $arrayData  = array();
 
@@ -128,19 +148,32 @@ function getGoogleDocPlans() {
 
     putenv('GOOGLE_APPLICATION_CREDENTIALS=' . $service_account_file);
 
-    $client = new Google_Client();
+    $client       = new Google_Client();
     $client->useApplicationDefaultCredentials();
     $client->addScope(Google_Service_Sheets::SPREADSHEETS_READONLY);
-    $service = new Google_Service_Sheets($client);
-    $result = $service->spreadsheets_values->get($spreadsheet_id, $spreadsheet_range);
-    $arrayData = $result->getValues(); // Mang du lieu
-    for($i = 0; $i < count($arrayData[0]); $i++) {
+    $service      = new Google_Service_Sheets($client);
+    $result       = $service->spreadsheets->get($spreadsheet_id);
+    $sheets       =       $result->getSheets();
+    foreach($sheets as $sheet) {
+        $title       =  strtolower($sheet->properties->title);
+        if($title == 'bullcoin') {
+            continue;
+        } else {
+            $arrayData[] = $title;
+        }
+        
+    }   
+    //$arrayData = $result->getValues(); // Mang du lieu
+    /*for($i = 0; $i < count($arrayData[0]); $i++) {
     	if($i < 4) {
     		unset($arrayData[0][$i]);
     	}
     }
-    $arrayData[0] 	=	array_values($arrayData[0]);
-    return $arrayData[0];
+    $arrayData[0] 	=	array_values($arrayData[0]);*/
+    /*echo '<pre>';
+    print_r($arrayData);
+    echo '</pre>';*/
+    return $arrayData;
 }
 
 // Lấy thông tin chi tiết các plan của user đang tham gia
@@ -176,28 +209,38 @@ function getGoogleDocChiTiet($tenPlan) {
     		unset($arrayData[$i]);
     	}
     }
-    array_pop($arrayData);
+    //array_pop($arrayData);
     $arrayData 		=	array_values($arrayData);
     $arrayResult 	=	array();
     
     foreach($arrayData as $key => $value) {
-    	if(empty($value['0'])) {
-    		$arrayResult[$key]['telegram_id'] 	=	0;
-    	} else {
-    		$arrayResult[$key]['telegram_id'] 	=	$value['0'];
-    	}
-    	$arrayResult[$key]['username'] 			=	$value['1'];
-    	$arrayResult[$key]['so_dao_pos'] 		=	$value['3'];
-    	$arrayResult[$key]['so_dau_tu'] 		=	$value['4'];
 
-    	$arrayResult[$key]['co_phan'] 			=	rtrim($value['5'], "%");
-    	if(isset($value['7'])) {
-            $arrayResult[$key]['so_vi']             =   $value['7'];
+        if(is_numeric($value['1']) || empty($value['1'])) {
+                continue;
         } else {
-            $arrayResult[$key]['so_vi']             =   '';
+            if(empty($value['0'])) {
+                $arrayResult[$key]['telegram_id']   =   0;
+            } else {
+                $arrayResult[$key]['telegram_id']   =   $value['0'];
+            }
+            $arrayResult[$key]['username']          =   $value['1'];
+            $arrayResult[$key]['so_dao_pos']        =   $value['3'];
+            $arrayResult[$key]['so_dau_tu']         =   $value['4'];
+
+            $arrayResult[$key]['co_phan']           =   rtrim($value['5'], "%");
+            if(isset($value['7'])) {
+                $arrayResult[$key]['so_vi']         =   $value['7'];
+            } else {
+                $arrayResult[$key]['so_vi']         =   '';
+            }
         }
     }
+
+    $arrayResult        =       array_values($arrayResult);
     
+    /*echo '<pre>';
+    print_r($arrayResult);
+    echo '</pre>';*/
 
     return $arrayResult;
 }
@@ -238,28 +281,33 @@ function getUserRequest($tenPlan) {
     $resultArray 	=	array();
     foreach ($arrayData as $key => $value) {
     	//$resultArray[$key]['telegram_id'] 	=	$value['0'];
-    	if(is_numeric($value['0'])) {
-    		$resultArray[$key]['telegram_id'] 	=	$value['0'];
+    	if(!is_numeric($value['1']) && !empty($value['1'])) {
+    		$resultArray[$key]['username'] 	=	$value['1'];
+            if(isset($value['8'])) {
+                $resultArray[$key]['tai_dau_tu']    =   $value['8'];
+            } else {
+                $resultArray[$key]['tai_dau_tu']    =   'có';
+            }
+
+            if(isset($value['13'])) {
+                $resultArray[$key]['yeu_cau_khac']  =   $value['13'];
+            } else {
+                $resultArray[$key]['yeu_cau_khac']  =   'Chưa có yêu cầu';
+            }
+
+            if(isset($value['14'])) {
+                $resultArray[$key]['yeu_cau_ngay']  =   $value['14'];
+            } else {
+                $resultArray[$key]['yeu_cau_ngay']  =   'không';
+            }
     	} else {
-    		$resultArray[$key]['username'] 		=	$value['0'];
+    		/*$resultArray[$key]['username'] 		=	$value['1'];*/
+            continue;
     	}
 
-    	if(isset($value['8'])) {
-    		$resultArray[$key]['tai_dau_tu'] 	=	$value['8'];
-    	} else {
-    		$resultArray[$key]['tai_dau_tu'] 	=	'có';
-    	}
-
-    	if(isset($value['13'])) {
-    		$resultArray[$key]['yeu_cau_khac'] 	=	$value['13'];
-    	} else {
-    		$resultArray[$key]['yeu_cau_khac'] 	=	'Chưa có yêu cầu';
-    	}
+    	
     }
-
-    /*echo '<pre>';
-    print_r($resultArray);
-    echo '</pre>';*/
+    $resultArray      =   array_values($resultArray);
 
     return $resultArray;
 }
@@ -297,29 +345,36 @@ function getProfitDetail($tenPlan) {
     	}
     }
     $arrayData 		=	array_values($arrayData);
-    array_pop($arrayData);
-    
+    //array_pop($arrayData);
+
     $arrayResult 	=	array();
-    foreach ($arrayData as $key => $value) {
-    	/*$arrayResult[$key]['username'] 	=	$value['1'];
-    	$arrayResult[$key]['username'] 	=	$value['1'];*/
-    	if(count($value) < 9) {
-            $value['8']     =   '';
-        }
-        if($key == 0) {
-                continue;
+    if(count($arrayData[0]) > 8) {
+        foreach ($arrayData as $key => $value) {
+            /*$arrayResult[$key]['username']    =   $value['1'];
+            $arrayResult[$key]['username']  =   $value['1'];*/
+            if($key == 0) {
+                    continue;
             } else {
-                $arrayResult[$key]['username']  =   $value['1'];
-                foreach($arrayData[0] as $k => $v) {
-                    if($k < 8) {
-                        continue;
-                    } else {
-                        $arrayResult[$key][$v]  =   $value[$k];
+                if(!is_numeric($value['1']) && !empty($value['1'])) {
+                    $arrayResult[$key]['username']  =   $value['1'];
+                    foreach($arrayData[0] as $k => $v) {
+                        if($k < 8) {
+                            continue;
+                        } else {
+                            @$arrayResult[$key][$v]  =   $value[$k];
+                        }
                     }
                 }
+                
             }
-    }
+        }
+    } 
     
+    
+    /*echo '<pre>';
+    print_r($arrayData);
+    echo '</pre>';*/
+
     return $arrayResult;
 }
 
@@ -363,13 +418,14 @@ function updateTableUser() {
 	$result 	= 	'';
 	$arrayUser 	=	getGoogleDocUser();
 	foreach($arrayUser as $key => $value) {
-		$queryUser = $db->findByCol('users','username', $value['username']);
-		if($queryUser == true) {
+		//$queryUser = $db->findByCol('users','username', $value['username']);
+        $queryUser = $db->query("SELECT * FROM :table WHERE `username` LIKE ':username'",['table'=>'users','username'=>$value['username']])->fetch();
+		if(!empty($queryUser)) {
 			
-			$result = $db->update('users',['password'=>$value['password'], 'ho_ten'=>$value['ho_ten'], 'facebook'=>$value['facebook'], 'telegram_id'=>$value['telegram_id']],' username = "'.$value["username"].'"');
+			$result = $db->update('users',['password'=>$value['password'], 'ho_ten'=>$value['ho_ten'], 'facebook'=>$value['facebook'], 'telegram_id'=>$value['telegram_id'],'email'=>$value['email']],' username = "'.$value["username"].'"');
 			
 		} else {
-			$result = $db->insert('users',['username'=>trim($value['username']), 'password'=>$value['password'], 'ho_ten'=>$value['ho_ten'], 'facebook'=>$value['facebook'], 'telegram_id'=>$value['telegram_id']]);
+			$result = $db->insert('users',['username'=>trim($value['username']), 'password'=>$value['password'], 'ho_ten'=>$value['ho_ten'], 'facebook'=>$value['facebook'], 'telegram_id'=>$value['telegram_id'], 'email'=>$value['email']]);
 		}
 	}
 	if($result == true) {
@@ -401,15 +457,14 @@ function updateTableChiTiet() {
 			} else {
 				continue;
 			}*/
-			if(isset($arrayRequest[$key]['telegram_id']) && $value['telegram_id'] == $arrayRequest[$key]['telegram_id']) {
+			if(isset($arrayRequest[$key]['username']) && trim($value['username']) == ($arrayRequest[$key]['username'])) {
 				$arrayChiTiet[$key]['tai_dau_tu'] 		=	$arrayRequest[$key]['tai_dau_tu'];
 				$arrayChiTiet[$key]['yeu_cau_khac'] 	=	$arrayRequest[$key]['yeu_cau_khac'];
-			} elseif(isset($arrayRequest[$key]['username']) && $value['username'] == $arrayRequest[$key]['username']) {
-				$arrayChiTiet[$key]['tai_dau_tu'] 		=	$arrayRequest[$key]['tai_dau_tu'];
-				$arrayChiTiet[$key]['yeu_cau_khac'] 	=	$arrayRequest[$key]['yeu_cau_khac'];
+                $arrayChiTiet[$key]['yeu_cau_ngay']     =   $arrayRequest[$key]['yeu_cau_ngay'];
 			} else {
 				$arrayChiTiet[$key]['tai_dau_tu'] 		=	"có";
 				$arrayChiTiet[$key]['yeu_cau_khac'] 	=	"Chưa có yêu cầu";
+                $arrayChiTiet[$key]['yeu_cau_ngay']     =   "không";
 				continue;
 			}
 
@@ -427,7 +482,7 @@ function updateTableChiTiet() {
 		foreach ($newArray[$i] as $plan => $details) {
 			foreach($details as $key => $value) {
 				$queryDetail = $db->query("SELECT * FROM :table WHERE :username = ':username_value' AND :ten_plan = ':ten_plan_value'",['table'=>'chitietplan','username'=>'username','username_value'=>$value['username'], 'ten_plan'=>'ten_plan', 'ten_plan_value' => $plan])->fetch();
-				if($queryDetail == true) {			
+				if(!empty($queryDetail)) {			
 					$result = $db->update('chitietplan',['so_dao_pos'=>$value['so_dao_pos'], 'so_dau_tu'=>$value['so_dau_tu'], 'co_phan'=>$value['co_phan'], 'so_vi'=>$value['so_vi'], 'tai_dau_tu'=>$value['tai_dau_tu'], 'yeu_cau_khac'=>$value['yeu_cau_khac']],' username = "'.$value['username'].'" AND ten_plan = "'.$plan.'"');
 				} else {
 					$result = $db->insert('chitietplan',['username'=>$value['username'], 'ten_plan'=>$plan, 'so_dao_pos'=>$value['so_dao_pos'], 'so_dau_tu'=>$value['so_dau_tu'], 'co_phan'=>$value['co_phan'], 'so_vi'=>$value['so_vi'], 'tai_dau_tu'=>$value['tai_dau_tu'], 'yeu_cau_khac'=>$value['yeu_cau_khac']]);
@@ -453,7 +508,8 @@ function updateTableChiaLai() {
 	foreach ($arrayPlans as $key => $plan) {
 		$arrayProfit 	=	getProfitDetail($plan);
 		foreach($arrayProfit as $k => $v) {
-			$username 	=	array_shift($v);
+			//$username 	=	array_shift($v);
+            $username   =   array_shift($v);
 			foreach($v as $date => $profit) {
 
 				$queryDetail = $db->query("SELECT * FROM `chialai` WHERE `username` = ':username_value' AND `ten_plan` = ':ten_plan_value' AND `ngay_chia_lai` = ':ngay_chia_lai_value' AND `lai_coin` = ':lai_coin'",['table'=>'chialai','username_value'=>$username, 'ten_plan_value' => $plan, 'ngay_chia_lai_value' => $date, 'lai_coin'=>$profit])->fetch();

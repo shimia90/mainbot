@@ -39,9 +39,9 @@ function replace_key($arr, $oldkey, $newkey) {
 function getDbUser() {
     $db = new Database(DB_SERVER,DB_USER,DB_PASS,DB_DATABASE);
     $arrayResult    =   array();
-    $queryUser = $db->query("SELECT `username`, `password`, `ho_ten`, `facebook` FROM :table",['table'=>'users'])->fetch_all();
+    $queryUser = $db->query("SELECT `username`, `password`, `ho_ten`, `facebook`, `telegram_id`, `email` FROM :table",['table'=>'users'])->fetch_all();
     
-    foreach($queryUser as $key => $value) {
+    /*foreach($queryUser as $key => $value) {
         $queryChitiet   =   $db->query("SELECT c.`username`, c.`ten_plan`, u.`telegram_id` FROM `chitietplan` AS c INNER JOIN `users` AS u ON c.`username` = u.`username` WHERE c.`username` = ':username' AND c.`so_dao_pos` NOT LIKE '0.00000%'",['table'=>'users', 'username'=>$value['username']])->fetch_all();
         foreach($queryChitiet as $k => $v) {
             if($v['telegram_id'] == 0) {
@@ -66,7 +66,7 @@ function getDbUser() {
             }
             
         }
-    }
+    }*/
     
     return $queryUser;
     $db->close();
